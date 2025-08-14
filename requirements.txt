@@ -2,3 +2,6 @@ streamlit
 pandas
 fpdf2
 plotly==5.22.0
+xlsxwriter
+gspread
+gspread-dataframe
