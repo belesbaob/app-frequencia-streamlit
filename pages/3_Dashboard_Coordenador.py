@@ -134,7 +134,7 @@ if not df_frequencia.empty:
     
     if not df_relatorio.empty:
         pdf_relatorio = gerar_pdf(mes_selecionado, df_relatorio)
-        pdf_output = BytesIO(pdf_relatorio.output(dest='S').encode('latin1'))
+        pdf_output = BytesIO(pdf_relatorio.output(dest='S'))
 
         st.download_button(
             label="Baixar Relatório de Ocorrências (PDF)",
