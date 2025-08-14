@@ -19,52 +19,58 @@ if not turmas:
 turma_selecionada = st.selectbox("Selecione a Turma:", turmas)
 df_alunos = get_alunos_by_turma(turma_selecionada)
 
+# Carrega e mescla os dados para que a coluna 'turma' esteja disponível globalmente no script
+df_frequencia = get_data(FREQUENCIA_FILE)
+df_alunos_completo = get_data(ALUNOS_FILE)
+df_frequencia_com_turma = pd.merge(df_frequencia, df_alunos_completo[['id_aluno', 'turma']], on='id_aluno', how='left')
+
 # --- Panorama dos dias de frequência ---
 st.subheader("1. Panorama da Frequência Salva")
-df_frequencia = get_data(FREQUENCIA_FILE)
-df_frequencia['data'] = pd.to_datetime(df_frequencia['data'])
+if not df_frequencia_com_turma.empty:
+    df_frequencia_com_turma['data'] = pd.to_datetime(df_frequencia_com_turma['data'])
 
-hoje = date.today()
-primeiro_dia_mes = hoje.replace(day=1)
-ultimo_dia_mes = (primeiro_dia_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    hoje = date.today()
+    primeiro_dia_mes = hoje.replace(day=1)
+    ultimo_dia_mes = (primeiro_dia_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
 
-# Filtra a frequência do mês atual para a turma selecionada
-frequencia_do_mes = df_frequencia[
-    (df_frequencia['data'].dt.date >= primeiro_dia_mes) &
-    (df_frequencia['data'].dt.date <= ultimo_dia_mes) &
-    (df_frequencia['turma'] == turma_selecionada)
-]
+    frequencia_do_mes = df_frequencia_com_turma[
+        (df_frequencia_com_turma['data'].dt.date >= primeiro_dia_mes) &
+        (df_frequencia_com_turma['data'].dt.date <= ultimo_dia_mes) &
+        (df_frequencia_com_turma['turma'] == turma_selecionada)
+    ]
+    
+    dias_salvos = frequencia_do_mes['data'].dt.date.unique()
+    dias_salvos_str = [d.strftime('%Y-%m-%d') for d in dias_salvos]
 
-dias_salvos = frequencia_do_mes['data'].dt.date.unique()
-dias_salvos_str = [d.strftime('%Y-%m-%d') for d in dias_salvos]
+    colunas_dias = st.columns(7)
+    dias_da_semana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+    for col, dia_semana in zip(colunas_dias, dias_da_semana):
+        col.markdown(f"**{dia_semana}**")
 
-colunas_dias = st.columns(7)
-dias_da_semana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-for col, dia_semana in zip(colunas_dias, dias_da_semana):
-    col.markdown(f"**{dia_semana}**")
-
-dia_atual = primeiro_dia_mes
-while dia_atual <= ultimo_dia_mes:
+    dia_atual = primeiro_dia_mes
     semana_cols = st.columns(7)
-    for col in semana_cols:
-        if dia_atual.weekday() < 5 and dia_atual >= primeiro_dia_mes and dia_atual <= ultimo_dia_mes: # Considera apenas dias úteis
+    i = 0
+    while dia_atual <= ultimo_dia_mes:
+        col = semana_cols[i % 7]
+        if dia_atual.weekday() < 5: # Considera apenas dias úteis
             if str(dia_atual) in dias_salvos_str:
                 col.button(f"✅ {dia_atual.day}", key=f"btn_{dia_atual}", disabled=True)
             else:
                 col.button(f"⬜ {dia_atual.day}", key=f"btn_{dia_atual}", disabled=True)
         dia_atual += timedelta(days=1)
+        i += 1
 
-data_selecionada = st.date_input("Selecione uma data para registrar a frequência:", date.today())
-
+    data_selecionada = st.date_input("Selecione uma data para registrar a frequência:", date.today())
+else:
+    data_selecionada = st.date_input("Selecione uma data para registrar a frequência:", date.today())
+    st.info("Nenhum dado de frequência para análise.")
 
 # --- Registrar/Refazer Frequência ---
 st.subheader("2. Registrar/Refazer Frequência")
 if df_alunos.empty:
     st.warning("Nenhum aluno nesta turma.")
 else:
-    df_alunos_completo = get_data(ALUNOS_FILE)
-    df_frequencia_com_turma = pd.merge(df_frequencia, df_alunos_completo[['id_aluno', 'turma']], on='id_aluno', how='left')
-    
+    # A mesclagem já foi feita no início do script
     if not df_frequencia_com_turma.empty:
         df_frequencia_com_turma['data'] = pd.to_datetime(df_frequencia_com_turma['data']).dt.date
     
