@@ -42,25 +42,25 @@ USERS = {
         "role": "admin", 
         "name": "Administrador"
     },
-    "professor1": {
+    "Daniele": {
         "password": "prof123", 
-        "role": "professor", 
+        "role": "Daniele", 
         "name": "Professora Daniele"
     },
-    "professor2": {
+    "Lucas": {
         "password": "prof456", 
-        "role": "professor", 
+        "role": "Lucas", 
         "name": "Professor Lucas Lemos"
     }, 
-    "professor3": {
+    "Janecleide": {
         "password": "prof789", 
-        "role": "professor", 
+        "role": "Janecleide", 
         "name": "Professora Janecleide"
     },
-    "coordenador": {
+    "Fdeangelis": {
         "password": "bae2025", 
-        "role": "coordenador", 
-        "name": "Fillypedeangelis"
+        "role": "Fdeangelis", 
+        "name": "Fillype"
     },
     "agente": {
         "password": "agent123", 
@@ -95,28 +95,28 @@ DEFAULT_USERS = {
         "name": "Administrador",
         "active": True
     },
-    "professor1": {
+    "Daniele": {
         "password": "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090",  # prof123
-        "role": "professor",
+        "role": "Daniele",
         "name": "Professora Daniele",
         "active": True
     },
-    "professor2": {
+    "Lucas": {
         "password": "8b2c86ea9cf2ea4eb517fd1e06b74f399e7fec0fef92e3b482a6cf2e2b092023",  # prof456
-        "role": "professor", 
+        "role": "Lucas", 
         "name": "Professor Lucas Lemos",
         "active": True
     },
-    "professor3": {
+    "Janecleide": {
         "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",  # prof789
-        "role": "professor",
+        "role": "Janecleide",
         "name": "Professora Janecleide",
         "active": True
     },
-    "coordenador": {
+    "Fdeangelis": {
         "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # bae2025
-        "role": "coordenador",
-        "name": "Fillypedeangelis",
+        "role": "Fdeangelis",
+        "name": "Fillype",
         "active": True
     },
     "agente": {
