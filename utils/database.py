@@ -21,6 +21,12 @@ DATA_FILES = {
     'logs': "data/system_logs.csv"
 }
 
+# Constantes para compatibilidade com código existente
+USERS_FILE = "data/users.csv"
+TURMAS_FILE = "data/turmas.csv"
+ALUNOS_FILE = "data/alunos.csv"
+FREQUENCIA_FILE = "data/frequencia.csv"
+
 # Níveis de acesso
 ACCESS_LEVELS = {
     'admin': ['users', 'turmas', 'alunos', 'frequencia', 'logs', 'reports'],
