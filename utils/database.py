@@ -58,9 +58,9 @@ USERS = {
         "name": "Professora Janecleide"
     },
     "coordenador": {
-        "password": "coord2025", 
+        "password": "bae2025", 
         "role": "coordenador", 
-        "name": "Coordenador Fillype"
+        "name": "Fillypedeangelis"
     },
     "agente": {
         "password": "agent123", 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     debug_users()
 
 # Usuários do sistema com senhas criptografadas (SHA-256)
-# Senhas originais: bist9080, prof123, prof456, prof789, coord2025, agent123
+# Senhas originais: bist9080, prof123, prof456, prof789, bae2025, agent123
 DEFAULT_USERS = {
     "admin": {
         "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",  # bist9080
@@ -114,9 +114,9 @@ DEFAULT_USERS = {
         "active": True
     },
     "coordenador": {
-        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # coord2025
+        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # bae2025
         "role": "coordenador",
-        "name": "Coordenador Fillype",
+        "name": "Fillypedeangelis",
         "active": True
     },
     "agente": {
