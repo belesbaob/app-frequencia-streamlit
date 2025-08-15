@@ -38,29 +38,29 @@ ACCESS_LEVELS = {
 # Compatibilidade com código existente - Estrutura USERS original
 USERS = {
     "admin": {
-        "password": "admin123", 
+        "password": "bist9080", 
         "role": "admin", 
         "name": "Administrador"
     },
     "professor1": {
         "password": "prof123", 
         "role": "professor", 
-        "name": "Professor João"
+        "name": "Professora Daniele"
     },
     "professor2": {
         "password": "prof456", 
         "role": "professor", 
-        "name": "Professora Maria"
+        "name": "Professor Lucas Lemos"
     }, 
     "professor3": {
         "password": "prof789", 
         "role": "professor", 
-        "name": "Professor Carlos"
+        "name": "Professora Janecleide"
     },
     "coordenador": {
         "password": "coord2025", 
         "role": "coordenador", 
-        "name": "Coordenador Pedagógico"
+        "name": "Coordenador Fillype"
     },
     "agente": {
         "password": "agent123", 
