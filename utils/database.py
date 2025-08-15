@@ -113,9 +113,9 @@ DEFAULT_USERS = {
         "name": "Professora Janecleide",
         "active": True
     },
-    "Fdeangelis": {
+    "Coordenador": {
         "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # bae2025
-        "role": "Fdeangelis",
+        "role": "Coordenador",
         "name": "Fillype",
         "active": True
     },
