@@ -57,9 +57,9 @@ USERS = {
         "role": "Janecleide", 
         "name": "Professora Janecleide"
     },
-    "Fdeangelis": {
+    "Coordenador": {
         "password": "bae2025", 
-        "role": "Fdeangelis", 
+        "role": "Coordenador", 
         "name": "Fillype"
     },
     "agente": {
