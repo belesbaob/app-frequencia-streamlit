@@ -1,36 +1,35 @@
+import streamlit as st
+import gspread
+from gspread.auth import authorized_client
 import pandas as pd
-import os
+from gspread_dataframe import set_with_dataframe, get_as_dataframe
 
-# Define os caminhos dos arquivos
-ALUNOS_FILE = "data/alunos.csv"
-TURMAS_FILE = "data/turmas.csv"
-FREQUENCIA_FILE = "data/frequencia.csv"
+# Credenciais de acesso ao Google Sheets (tokens OAuth)
+@st.cache_resource
+def get_gspread_client():
+    creds = st.secrets["oauth"]
+    gc = gspread.authorize(authorized_client(
+        credentials=creds,
+        scopes=['https://www.googleapis.com/auth/spreadsheets']
+    ))
+    return gc
 
-# Verifica se os arquivos existem, se não, os cria
-def setup_files():
-    if not os.path.exists("data"):
-        os.makedirs("data")
-    if not os.path.exists(ALUNOS_FILE):
-        df_alunos = pd.DataFrame(columns=['id_aluno', 'nome', 'turma'])
-        df_alunos.to_csv(ALUNos_FILE, index=False)
-    if not os.path.exists(TURMAS_FILE):
-        df_turmas = pd.DataFrame(columns=['id_turma', 'nome_turma'])
-        df_turmas.to_csv(TURMAS_FILE, index=False)
-    if not os.path.exists(FREQUENCIA_FILE):
-        df_frequencia = pd.DataFrame(columns=['id_aluno', 'data', 'status', 'justificativa', 'professor'])
-        df_frequencia.to_csv(FREQUENCIA_FILE, index=False)
+gc = get_gspread_client()
+sh = gc.open("FrequenciaEscolar") # Nome da sua planilha
 
-def get_data(file_path):
-    """Lê um arquivo CSV e retorna um DataFrame."""
-    # Garante que a leitura use a codificação correta para o português
-    try:
-        return pd.read_csv(file_path, encoding='utf-8')
-    except UnicodeDecodeError:
-        return pd.read_csv(file_path, encoding='latin1')
+# Funções de leitura e gravação
+def get_data(worksheet_name):
+    """Lê os dados de uma aba e retorna um DataFrame."""
+    worksheet = sh.worksheet(worksheet_name)
+    df = get_as_dataframe(worksheet, header=0)
+    df = df.dropna(how='all')
+    return df
 
-def save_data(df, file_path):
-    """Salva um DataFrame em um arquivo CSV."""
-    df.to_csv(file_path, index=False, encoding='utf-8')
+def save_data(df, worksheet_name):
+    """Salva um DataFrame em uma aba do Google Sheets."""
+    worksheet = sh.worksheet(worksheet_name)
+    worksheet.clear()
+    set_with_dataframe(worksheet, df)
 
 
 def get_alunos_by_turma(turma):
@@ -43,7 +42,7 @@ USERS = {
     "Janecleide": {"password": "jane123", "role": "professor"},
     "Daniele": {"password": "daniele123", "role": "professor"},
     "Lucas": {"password": "lucaslemos123", "role": "professor"},
-    "admin": {"password": "admin", "role": "admin"},
+    "sec": {"password": "bist9080", "role": "admin"},
     "deangelis": {"password": "bae2025", "role": "coordenador"},
     "Crislania": {"password": "cris123", "role": "agente"}
 }
