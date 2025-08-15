@@ -29,15 +29,56 @@ ACCESS_LEVELS = {
     'agente': ['frequencia']
 }
 
-# Compatibilidade com código existente - USERS com estrutura original
+# Compatibilidade com código existente - Estrutura USERS original
 USERS = {
-    "admin": {"password": "admin123", "role": "admin", "name": "Administrador"},
-    "professor1": {"password": "prof123", "role": "professor", "name": "Professor João"},
-    "professor2": {"password": "prof456", "role": "professor", "name": "Professora Maria"}, 
-    "professor3": {"password": "prof789", "role": "professor", "name": "Professor Carlos"},
-    "coordenador": {"password": "coord2025", "role": "coordenador", "name": "Coordenador Pedagógico"},
-    "agente": {"password": "agent123", "role": "agente", "name": "Agente Escolar"}
+    "admin": {
+        "password": "admin123", 
+        "role": "admin", 
+        "name": "Administrador"
+    },
+    "professor1": {
+        "password": "prof123", 
+        "role": "professor", 
+        "name": "Professor João"
+    },
+    "professor2": {
+        "password": "prof456", 
+        "role": "professor", 
+        "name": "Professora Maria"
+    }, 
+    "professor3": {
+        "password": "prof789", 
+        "role": "professor", 
+        "name": "Professor Carlos"
+    },
+    "coordenador": {
+        "password": "coord2025", 
+        "role": "coordenador", 
+        "name": "Coordenador Pedagógico"
+    },
+    "agente": {
+        "password": "agent123", 
+        "role": "agente", 
+        "name": "Agente Escolar"
+    }
 }
+
+# Debug - Vamos verificar a estrutura
+def debug_users():
+    """Função para debugar a estrutura do USERS."""
+    print("=== DEBUG USERS ===")
+    for username, user_data in USERS.items():
+        print(f"User: {username}")
+        print(f"  Type: {type(user_data)}")
+        print(f"  Keys: {list(user_data.keys()) if isinstance(user_data, dict) else 'Not a dict'}")
+        if isinstance(user_data, dict) and "password" in user_data:
+            print(f"  Password: {user_data['password']}")
+        print("---")
+    print("=== END DEBUG ===")
+
+# Execute debug se necessário
+if __name__ == "__main__":
+    debug_users()
 
 # Usuários do sistema com senhas criptografadas (SHA-256)
 # Senhas originais: admin123, prof123, prof456, prof789, coord2025, agent123
@@ -359,6 +400,34 @@ def has_permission(user_role: str, required_permission: str) -> bool:
     """Verifica se o usuário tem permissão para acessar uma funcionalidade."""
     user_permissions = ACCESS_LEVELS.get(user_role, [])
     return required_permission in user_permissions
+
+def check_user_credentials(username: str, password: str) -> bool:
+    """Função auxiliar para verificar credenciais - compatibilidade total."""
+    try:
+        if username in USERS:
+            user_data = USERS[username]
+            if isinstance(user_data, dict) and "password" in user_data:
+                return user_data["password"] == password
+            elif isinstance(user_data, str):
+                # Fallback se for string simples
+                return user_data == password
+        return False
+    except (KeyError, TypeError) as e:
+        logger.error(f"Erro na verificação de credenciais: {e}")
+        return False
+
+def get_user_info(username: str) -> Dict[str, str]:
+    """Retorna informações do usuário."""
+    if username in USERS:
+        user_data = USERS[username]
+        if isinstance(user_data, dict):
+            return {
+                'username': username,
+                'role': user_data.get('role', 'user'),
+                'name': user_data.get('name', username.title()),
+                'password': user_data.get('password', '')
+            }
+    return None
 
 def get_users_by_role(role: str) -> pd.DataFrame:
     """Retorna usuários por função."""
