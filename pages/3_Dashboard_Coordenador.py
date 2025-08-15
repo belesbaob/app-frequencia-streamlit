@@ -161,13 +161,31 @@ with tab1:
     col1, col2, col3, col4 = st.columns(4)
     
     total_alunos = df_alunos['id_aluno'].nunique() if not df_alunos.empty else 0
-    total_turmas = df_turmas['nome'].nunique() if not df_turmas.empty else 0
+    # Verificar colunas disponíveis em df_turmas e usar a primeira coluna disponível
+    if not df_turmas.empty:
+        # Tentar diferentes possíveis nomes de colunas
+        if 'nome' in df_turmas.columns:
+            total_turmas = df_turmas['nome'].nunique()
+        elif 'turma' in df_turmas.columns:
+            total_turmas = df_turmas['turma'].nunique()
+        elif 'id_turma' in df_turmas.columns:
+            total_turmas = df_turmas['id_turma'].nunique()
+        else:
+            # Se não encontrar nenhuma coluna conhecida, usar a primeira coluna
+            total_turmas = df_turmas.iloc[:, 0].nunique()
+    else:
+        total_turmas = 0
+    
     taxa_falta = (len(df_filtrado[df_filtrado['status'] == 'Falta']) / len(df_filtrado) * 100) if len(df_filtrado) > 0 else 0
-    alunos_criticos = len(df_filtrado.groupby('id_aluno')['status'].apply(
-        lambda x: (x == 'Falta').sum() / x.count() > 0.3
-    ).reset_index()[df_filtrado.groupby('id_aluno')['status'].apply(
-        lambda x: (x == 'Falta').sum() / x.count() > 0.3
-    ).reset_index()['status'] == True]) if len(df_filtrado) > 0 else 0
+    
+    # Simplificar cálculo de alunos críticos
+    if len(df_filtrado) > 0:
+        alunos_faltas = df_filtrado.groupby('id_aluno')['status'].apply(
+            lambda x: (x == 'Falta').sum() / x.count()
+        )
+        alunos_criticos = len(alunos_faltas[alunos_faltas > 0.3])
+    else:
+        alunos_criticos = 0
     
     with col1:
         st.metric("👥 Total de Alunos", f"{total_alunos:,}")
@@ -531,7 +549,7 @@ with tab4:
         total_alunos_rel = df_alunos['id_aluno'].nunique() if not df_alunos.empty else 0
         total_registros_rel = len(df_filtrado)
         taxa_presenca_rel = ((total_registros_rel - len(df_filtrado[df_filtrado['status'] == 'Falta'])) / total_registros_rel * 100) if total_registros_rel > 0 else 0
-        media_faltas_aluno = len(df_filtrado[df_filtrado['status'] == 'Falta']) / total_alunos_rel if total_alunos_rel > 0 else 0
+        media_faltas_aluno = len(df_filtrado[df_filtrado['status'] == 'Falta']) / max(1, total_alunos_rel)
         
         with col1:
             st.metric("Total de Alunos", total_alunos_rel)
@@ -543,7 +561,7 @@ with tab4:
             st.metric("Média Faltas/Aluno", f"{media_faltas_aluno:.1f}")
         
         # Tabela resumo
-        if not df_filtrado.empty:
+        if not df_filtrado.empty and 'turma' in df_filtrado.columns:
             resumo_turmas = df_filtrado.groupby('turma').agg({
                 'id_aluno': 'nunique',
                 'status': ['count', lambda x: (x == 'Falta').sum()]
@@ -552,10 +570,12 @@ with tab4:
             resumo_turmas['Taxa_Presenca'] = ((resumo_turmas['Total_Registros'] - resumo_turmas['Total_Faltas']) / resumo_turmas['Total_Registros'] * 100).round(1)
             
             st.dataframe(resumo_turmas, use_container_width=True)
+        else:
+            st.warning("Dados insuficientes para gerar resumo por turma")
     
     elif tipo_relatorio == "Relatório de Alunos Críticos":
         # Identificar alunos críticos (>30% de faltas)
-        if not df_filtrado.empty:
+        if not df_filtrado.empty and 'nome' in df_filtrado.columns and 'turma' in df_filtrado.columns:
             alunos_criticos_rel = df_filtrado.groupby(['nome', 'turma']).agg({
                 'status': ['count', lambda x: (x == 'Falta').sum()]
             }).round(2)
@@ -569,6 +589,8 @@ with tab4:
                 st.warning(f"⚠️ Foram identificados {len(alunos_criticos_rel)} alunos em situação crítica (>30% de faltas)")
             else:
                 st.success("✅ Nenhum aluno em situação crítica identificado!")
+        else:
+            st.warning("Dados insuficientes para análise de alunos críticos")
     
     # Função para gerar PDF melhorado
     def gerar_relatorio_pdf(tipo, dados, periodo):
@@ -604,7 +626,7 @@ with tab4:
         pdf.ln(5)
         
         # Detalhamento por turma
-        if 'turma' in dados.columns:
+        if 'turma' in dados.columns and 'nome' in dados.columns:
             pdf.set_font("Arial", 'B', 12)
             pdf.cell(0, 8, "DETALHAMENTO POR TURMA", 0, 1)
             
@@ -626,7 +648,7 @@ with tab4:
             turma_stats['Taxa_Presenca'] = ((turma_stats['Total_Registros'] - turma_stats['Total_Faltas']) / turma_stats['Total_Registros'] * 100).round(1)
             
             for turma, row in turma_stats.iterrows():
-                pdf.cell(40, 6, str(turma), 1, 0, 'L')
+                pdf.cell(40, 6, str(turma)[:15], 1, 0, 'L')  # Limitar tamanho do texto
                 pdf.cell(30, 6, str(int(row['Qtd_Alunos'])), 1, 0, 'C')
                 pdf.cell(35, 6, str(int(row['Total_Registros'])), 1, 0, 'C')
                 pdf.cell(30, 6, str(int(row['Total_Faltas'])), 1, 0, 'C')
@@ -659,7 +681,7 @@ with tab4:
                         df_filtrado.to_excel(writer, sheet_name='Dados_Frequencia', index=False)
                         
                         # Aba com resumo por turma
-                        if 'turma' in df_filtrado.columns:
+                        if 'turma' in df_filtrado.columns and 'nome' in df_filtrado.columns:
                             resumo_turmas = df_filtrado.groupby('turma').agg({
                                 'nome': 'nunique',
                                 'status': ['count', lambda x: (x == 'Falta').sum()]
@@ -710,38 +732,40 @@ with tab5:
     
     if not df_filtrado.empty:
         # Alerta 1: Alunos com alta taxa de faltas
-        alunos_alta_falta = df_filtrado.groupby(['nome', 'turma']).agg({
-            'status': ['count', lambda x: (x == 'Falta').sum()]
-        }).round(2)
-        alunos_alta_falta.columns = ['Total_Registros', 'Total_Faltas']
-        alunos_alta_falta['Percentual_Faltas'] = (alunos_alta_falta['Total_Faltas'] / alunos_alta_falta['Total_Registros'] * 100).round(1)
-        alunos_criticos_alert = alunos_alta_falta[alunos_alta_falta['Percentual_Faltas'] >= limite_falta_individual].reset_index()
-        
-        for _, aluno in alunos_criticos_alert.iterrows():
-            alertas.append({
-                'tipo': 'CRÍTICO',
-                'categoria': '👤 Aluno',
-                'titulo': f"Alta Taxa de Faltas - {aluno['nome']}",
-                'descricao': f"Aluno da turma {aluno['turma']} com {aluno['Percentual_Faltas']:.1f}% de faltas",
-                'acao': 'Contato imediato com aluno e responsáveis',
-                'prioridade': 1
-            })
+        if 'nome' in df_filtrado.columns and 'turma' in df_filtrado.columns:
+            alunos_alta_falta = df_filtrado.groupby(['nome', 'turma']).agg({
+                'status': ['count', lambda x: (x == 'Falta').sum()]
+            }).round(2)
+            alunos_alta_falta.columns = ['Total_Registros', 'Total_Faltas']
+            alunos_alta_falta['Percentual_Faltas'] = (alunos_alta_falta['Total_Faltas'] / alunos_alta_falta['Total_Registros'] * 100).round(1)
+            alunos_criticos_alert = alunos_alta_falta[alunos_alta_falta['Percentual_Faltas'] >= limite_falta_individual].reset_index()
+            
+            for _, aluno in alunos_criticos_alert.iterrows():
+                alertas.append({
+                    'tipo': 'CRÍTICO',
+                    'categoria': '👤 Aluno',
+                    'titulo': f"Alta Taxa de Faltas - {aluno['nome']}",
+                    'descricao': f"Aluno da turma {aluno['turma']} com {aluno['Percentual_Faltas']:.1f}% de faltas",
+                    'acao': 'Contato imediato com aluno e responsáveis',
+                    'prioridade': 1
+                })
         
         # Alerta 2: Turmas com taxa elevada de faltas
-        turmas_alta_falta = df_filtrado.groupby('turma')['status'].apply(
-            lambda x: (x == 'Falta').sum() / x.count() * 100
-        ).reset_index(name='percentual_faltas')
-        turmas_criticas = turmas_alta_falta[turmas_alta_falta['percentual_faltas'] >= limite_falta_turma]
-        
-        for _, turma in turmas_criticas.iterrows():
-            alertas.append({
-                'tipo': 'ATENÇÃO',
-                'categoria': '🎓 Turma',
-                'titulo': f"Taxa Elevada de Faltas - Turma {turma['turma']}",
-                'descricao': f"Turma com {turma['percentual_faltas']:.1f}% de taxa de faltas",
-                'acao': 'Reunião com professores da turma',
-                'prioridade': 2
-            })
+        if 'turma' in df_filtrado.columns:
+            turmas_alta_falta = df_filtrado.groupby('turma')['status'].apply(
+                lambda x: (x == 'Falta').sum() / x.count() * 100
+            ).reset_index(name='percentual_faltas')
+            turmas_criticas = turmas_alta_falta[turmas_alta_falta['percentual_faltas'] >= limite_falta_turma]
+            
+            for _, turma in turmas_criticas.iterrows():
+                alertas.append({
+                    'tipo': 'ATENÇÃO',
+                    'categoria': '🎓 Turma',
+                    'titulo': f"Taxa Elevada de Faltas - Turma {turma['turma']}",
+                    'descricao': f"Turma com {turma['percentual_faltas']:.1f}% de taxa de faltas",
+                    'acao': 'Reunião com professores da turma',
+                    'prioridade': 2
+                })
         
         # Alerta 3: Tendência crescente de faltas
         if len(df_filtrado) > 30:  # Só analisa se tiver dados suficientes
@@ -873,7 +897,15 @@ if not df_filtrado.empty:
         df_tabela = df_tabela.sort_values('status')
     
     # Formatação da tabela
-    df_display = df_tabela[['data', 'nome', 'turma', 'status', 'justificativa', 'professor']].head(limite_registros).copy()
+    colunas_disponiveis = ['data', 'nome', 'turma', 'status']
+    
+    # Adicionar colunas opcionais se existirem
+    if 'justificativa' in df_tabela.columns:
+        colunas_disponiveis.append('justificativa')
+    if 'professor' in df_tabela.columns:
+        colunas_disponiveis.append('professor')
+    
+    df_display = df_tabela[colunas_disponiveis].head(limite_registros).copy()
     df_display['data'] = df_display['data'].dt.strftime('%d/%m/%Y')
     
     # Aplicar cores condicionais
