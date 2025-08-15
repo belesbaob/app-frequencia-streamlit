@@ -29,6 +29,16 @@ ACCESS_LEVELS = {
     'agente': ['frequencia']
 }
 
+# Compatibilidade com código existente - USERS simples
+USERS = {
+    "admin": "admin123",
+    "professor1": "prof123", 
+    "professor2": "prof456",
+    "professor3": "prof789",
+    "coordenador": "coord2025",
+    "agente": "agent123"
+}
+
 # Usuários do sistema com senhas criptografadas (SHA-256)
 # Senhas originais: admin123, prof123, prof456, prof789, coord2025, agent123
 DEFAULT_USERS = {
@@ -309,32 +319,53 @@ def get_alunos_by_turma(turma: str) -> pd.DataFrame:
 
 def authenticate_user(username: str, password: str) -> Dict[str, any]:
     """Autentica usuário e retorna informações se válido."""
+    # Primeiro tenta autenticação avançada
     users_df = db_manager.get_data('users')
     
-    if users_df.empty:
-        return None
+    if not users_df.empty:
+        user_row = users_df[users_df['username'] == username]
+        if not user_row.empty:
+            user_data = user_row.iloc[0]
+            if user_data.get('active', True):
+                if db_manager.verify_password(password, user_data['password']):
+                    # Atualizar último login
+                    users_df.loc[users_df['username'] == username, 'last_login'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    db_manager.save_data(users_df, 'users')
+                    
+                    # Registrar login
+                    db_manager.log_action(username, 'LOGIN', 'Usuário autenticado com sucesso')
+                    
+                    return {
+                        'username': user_data['username'],
+                        'role': user_data['role'],
+                        'name': user_data['name'],
+                        'permissions': ACCESS_LEVELS.get(user_data['role'], [])
+                    }
     
-    user_row = users_df[users_df['username'] == username]
-    if user_row.empty:
-        return None
-    
-    user_data = user_row.iloc[0]
-    if not user_data.get('active', True):
-        return None
-    
-    if db_manager.verify_password(password, user_data['password']):
-        # Atualizar último login
-        users_df.loc[users_df['username'] == username, 'last_login'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        db_manager.save_data(users_df, 'users')
-        
-        # Registrar login
-        db_manager.log_action(username, 'LOGIN', 'Usuário autenticado com sucesso')
+    # Fallback para autenticação simples (compatibilidade)
+    if username in USERS and USERS[username] == password:
+        # Determinar role baseado no username
+        if username == 'admin':
+            role = 'admin'
+            name = 'Administrador'
+        elif username.startswith('professor'):
+            role = 'professor'
+            name = f'Professor {username[-1]}'
+        elif username == 'coordenador':
+            role = 'coordenador'
+            name = 'Coordenador'
+        elif username == 'agente':
+            role = 'agente'
+            name = 'Agente Escolar'
+        else:
+            role = 'user'
+            name = username.title()
         
         return {
-            'username': user_data['username'],
-            'role': user_data['role'],
-            'name': user_data['name'],
-            'permissions': ACCESS_LEVELS.get(user_data['role'], [])
+            'username': username,
+            'role': role,
+            'name': name,
+            'permissions': ACCESS_LEVELS.get(role, [])
         }
     
     return None
