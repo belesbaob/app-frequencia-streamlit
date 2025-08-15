@@ -1,48 +1,79 @@
-import streamlit as st
-import gspread
-from gspread.auth import authorized_client
 import pandas as pd
-from gspread_dataframe import set_with_dataframe, get_as_dataframe
+import gspread
+from google.oauth2.service_account import Credentials
+import streamlit as st
 
-# Credenciais de acesso ao Google Sheets (tokens OAuth)
-@st.cache_resource
+# Arquivos de dados
+USERS_FILE = "data/users.csv"
+TURMAS_FILE = "data/turmas.csv"
+ALUNOS_FILE = "data/alunos.csv"
+FREQUENCIA_FILE = "data/frequencia.csv"
+
+# Função para autenticação e conexão com o Google Sheets
 def get_gspread_client():
-    creds = st.secrets["oauth"]
-    gc = gspread.authorize(authorized_client(
-        credentials=creds,
-        scopes=['https://www.googleapis.com/auth/spreadsheets']
-    ))
-    return gc
+    # Carrega as credenciais do Streamlit Secrets
+    credentials_dict = st.secrets["gcp_service_account"]
+    
+    # Define os escopos necessários
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    
+    # Cria as credenciais a partir do dicionário de secrets
+    credentials = Credentials.from_service_account_info(
+        credentials_dict, scopes=scopes
+    )
+    
+    # Retorna o cliente autenticado
+    return gspread.authorize(credentials)
 
-gc = get_gspread_client()
-sh = gc.open("FrequenciaEscolar") # Nome da sua planilha
+def get_data(file_name):
+    """Lê dados de um arquivo CSV."""
+    # Lógica de fallback para Google Sheets
+    if st.secrets.get("use_google_sheets"):
+        try:
+            client = get_gspread_client()
+            sheet = client.open_by_key(st.secrets["google_sheets_key"])
+            worksheet = sheet.worksheet(file_name) # Assume que o nome da aba é o nome do arquivo
+            return pd.DataFrame(worksheet.get_all_records())
+        except Exception as e:
+            st.error(f"Erro ao ler do Google Sheets: {e}")
+            return pd.DataFrame()
+    
+    try:
+        df = pd.read_csv(file_name)
+        return df
+    except FileNotFoundError:
+        return pd.DataFrame()
 
-# Funções de leitura e gravação
-def get_data(worksheet_name):
-    """Lê os dados de uma aba e retorna um DataFrame."""
-    worksheet = sh.worksheet(worksheet_name)
-    df = get_as_dataframe(worksheet, header=0)
-    df = df.dropna(how='all')
-    return df
+def save_data(df, file_name):
+    """Salva dados em um arquivo CSV."""
+    if st.secrets.get("use_google_sheets"):
+        try:
+            client = get_gspread_client()
+            sheet = client.open_by_key(st.secrets["google_sheets_key"])
+            worksheet = sheet.worksheet(file_name)
+            worksheet.clear()
+            worksheet.update([df.columns.values.tolist()] + df.values.tolist())
+            st.success(f"Dados salvos no Google Sheets: {file_name}")
+            return
+        except Exception as e:
+            st.error(f"Erro ao salvar no Google Sheets: {e}")
+            return
 
-def save_data(df, worksheet_name):
-    """Salva um DataFrame em uma aba do Google Sheets."""
-    worksheet = sh.worksheet(worksheet_name)
-    worksheet.clear()
-    set_with_dataframe(worksheet, df)
+    df.to_csv(file_name, index=False)
+    st.success(f"Dados salvos em {file_name}")
 
+def setup_files():
+    """Configura os arquivos CSV (se não existirem)."""
+    if not os.path.exists(USERS_FILE):
+        users_df = pd.DataFrame(USERS)
+        save_data(users_df, USERS_FILE)
+
+    # Adicione a lógica de criação para outros arquivos aqui, se necessário
 
 def get_alunos_by_turma(turma):
-    """Retorna a lista de alunos de uma turma específica."""
+    """Retorna os alunos de uma turma específica."""
     df_alunos = get_data(ALUNOS_FILE)
     return df_alunos[df_alunos['turma'] == turma]
-
-# Exemplo de dados para simular o login
-USERS = {
-    "Janecleide": {"password": "jane123", "role": "professor"},
-    "Daniele": {"password": "daniele123", "role": "professor"},
-    "Lucas": {"password": "lucaslemos123", "role": "professor"},
-    "sec": {"password": "bist9080", "role": "admin"},
-    "deangelis": {"password": "bae2025", "role": "coordenador"},
-    "Crislania": {"password": "cris123", "role": "agente"}
-}
