@@ -43,33 +43,33 @@ USERS = {
 # Senhas originais: admin123, prof123, prof456, prof789, coord2025, agent123
 DEFAULT_USERS = {
     "admin": {
-        "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",  # admin123
+        "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",  # sec2003
         "role": "admin",
-        "name": "Administrador",
+        "name": "Administrativo",
         "active": True
     },
     "professor1": {
         "password": "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090",  # prof123
         "role": "professor",
-        "name": "Professor João",
+        "name": "Professora Janecleide",
         "active": True
     },
     "professor2": {
         "password": "8b2c86ea9cf2ea4eb517fd1e06b74f399e7fec0fef92e3b482a6cf2e2b092023",  # prof456
         "role": "professor", 
-        "name": "Professora Maria",
+        "name": "Professora Daniele",
         "active": True
     },
     "professor3": {
         "password": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",  # prof789
         "role": "professor",
-        "name": "Professor Carlos",
+        "name": "Professor Lucas",
         "active": True
     },
     "coordenador": {
         "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",  # coord2025
         "role": "coordenador",
-        "name": "Coordenador Pedagógico",
+        "name": "Coordenador Fillype de Angelis",
         "active": True
     },
     "agente": {
